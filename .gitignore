@@ -1,0 +1,6 @@
+# Excluding the swp file
+.*.swp
+
+# Excluding excel and csv
+*.xlsx
+*.csv
