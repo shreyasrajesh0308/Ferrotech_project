@@ -2,6 +2,8 @@
 import os 
 import pandas as pd
 import subset_sum_problem
+import UI_inter
+
 
 def frame_generator(df, df_count): 
     '''
@@ -32,13 +34,10 @@ if __name__ == "__main__":
         os.remove("optimized.csv")
 
     #Read from excel file
-    path_to_excel_file = "/home/shreyas/Adi_project/Data/fwdsamplenestingfiles/test_input.xlsx"
-    df = pd.read_excel(path_to_excel_file, index = False)
+    df, loadbar_pitch, framebar_pitch = UI_inter.main()
 
     #Variables for the system
     panel_max_width = 1000
-    framebar_pitch = 30
-    loadbar_pitch = 5
     input_widths = df["WIDTH"]
 
     # Calculating new width values
