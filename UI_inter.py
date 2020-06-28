@@ -32,8 +32,8 @@ def get_save_Excel():
     global row
     col=len(data.columns)
     row=len(data.index)
-    arr_str=["TYPE", "ERECTION MARK", "SPAN (mm)", "WIDTH (mm)", "QTY (Nos)"]
-    for f in range(5):
+    arr_str=["TYPE",  "DRAWING NO", "ERECTION MARK", "SPAN (mm)", "WIDTH (mm)", "QTY (Nos)"]
+    for f in range(6):
         for i in range(row):
             for j in range(col):
                 if(data.iloc[i, j]== arr_str[f]):

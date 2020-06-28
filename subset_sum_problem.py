@@ -3,19 +3,23 @@ import pandas as pd
 import os
 
 
-def df_maker(df, numbers):
+def df_maker(df_imported, numbers):
     '''
     This function takes as input the input dataframe and checks if span exists in the list of numbers given also as input. It returns a new dataframe with only the specified span values as given in input list of numbers.
     '''
     counter = 0
+    len_of_frame = len(df_imported)
     for number in numbers:
-        for i in range(len(df)):
-            if df.iloc[i].SPAN == number and counter == 0:
-                new_df = df.iloc[i:i+1]
+        for i in range(len_of_frame):
+            #print(i)
+            if df_imported.iloc[i].SPAN == number and counter == 0:
+                new_df = df_imported.iloc[i:i+1]
                 counter += 1
+                df_imported.drop(df_imported.index[i], inplace = True)
                 break
-            elif df.iloc[i].SPAN == number and counter != 0:
-                new_df = new_df.append(df.iloc[i:i+1])
+            elif df_imported.iloc[i].SPAN == number and counter != 0:
+                new_df = new_df.append(df_imported.iloc[i:i+1])
+                df_imported.drop(df_imported.index[i], inplace = True)
                 break
     return new_df
 
@@ -87,9 +91,13 @@ def input_function(input_df, req_sum, sheet_number, input_width_value):
     input_list = list(input_df["SPAN"])
     cumulative_wastage = 0
     initial_list = input_list.copy()
+    print("THIS IS THE NEW DATAFRAME BOOM \n")
+    print(input_df)
+    max_area = req_sum*input_width_value
 
     while(len(input_list)!=0):
 
+        Area_sum = 0
         dp_table = np.zeros((len(input_list)+1, req_sum + 1))
         dp_table[:, 0] = 1
 
@@ -99,19 +107,23 @@ def input_function(input_df, req_sum, sheet_number, input_width_value):
         cumulative_wastage += percentage_wastage
         input_df = input_df.reset_index(drop=True)
         new_df = df_maker(input_df, list_of_numbers)
+        Area_sum = sum(new_df["Area"])
 
         new_df = new_df.sort_values(by = ["SPAN"], ascending = True)
-        dups = new_df.pivot_table(index = ["SPAN", "ERECTION_MARK", "WIDTH"], aggfunc='size')
+        dups = new_df.pivot_table(index = ["DRAWING NO","SPAN", "ERECTION_MARK", "WIDTH"], aggfunc='size')
         new_df = new_df.drop_duplicates()
+        total_area_percentage = (max_area - Area_sum)*100 / max_area
+
 
         new_df["Quantity"] = list(dups)
         new_df["Dimensions"] = ["{}x{}".format(req_sum, input_width_value)]*len(new_df)
         new_df["Sheet_no"] = [sheet_number + number_of_sheets]*len(new_df)
         new_df["wastage"] = [percentage_wastage]*len(new_df) 
-
+        new_df["Area_Wastage"] = [total_area_percentage]*len(new_df)
+        new_df = new_df.drop(["Area"], axis = 1 )
 
         new_df = new_df.append(pd.Series(), ignore_index=True)
-        new_df = new_df.drop(columns=new_df.columns[0])
+        #new_df = new_df.drop(columns=new_df.columns[0])
 
         if not os.path.isfile("optimized.csv"):
             new_df.to_csv("optimized.csv", header='column_names')
@@ -123,6 +135,7 @@ def input_function(input_df, req_sum, sheet_number, input_width_value):
         input_list = modifier(input_list, list_of_numbers)
 
     total_wastage = req_sum*number_of_sheets - sum(initial_list)
+    total_area_percentage = (max_area - Area_sum)*100 / max_area
     total_wastage_percentage = total_wastage/(req_sum*number_of_sheets)
 
     return number_of_sheets 
