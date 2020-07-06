@@ -33,11 +33,22 @@ def frame_generator(df, df_count):
     '''
     This function calls the dp algorithm in the file subset_sum_problem and writes the optimized patter onto a csv file called optimized.csv
     '''
-    number_of_sheets = 1
-    for i in df_count["value"]: 
+    number_of_sheets = 0
+    new_req_sum = 5930
+    is_width_change = 1 
+    rep_counter = 0
+    Area_sum = 0
+    df_count  = df_count.sort_values(by = ["value"], ascending = False)
+    df_count = df_count.reset_index(drop=True)
+    print(df_count)
+    for i in range(len(df_count["value"])): 
 
-        df_chunk = df[df.New_Widths == i]
-        sheet_counter =  subset_sum_problem.input_function(df_chunk, 5930, number_of_sheets, i)
+        df_chunk = df[df.New_Widths == df_count["value"][i]]
+        print(" for case {}, width_change value is {}".format(i, is_width_change))
+        if is_width_change == 0:
+            sheet_counter, new_req_sum, is_width_change, rep_counter, Area_sum =  subset_sum_problem.input_function(df_chunk, new_req_sum, number_of_sheets, df_count["value"][i-1], rep_counter, Area_sum)
+        else:
+            sheet_counter, new_req_sum, is_width_change, rep_counter, Area_sum =  subset_sum_problem.input_function(df_chunk, new_req_sum, number_of_sheets, df_count["value"][i], rep_counter, Area_sum)
         number_of_sheets+=sheet_counter
 
     print("File Generated!")
