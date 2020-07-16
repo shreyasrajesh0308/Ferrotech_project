@@ -17,14 +17,11 @@ def grouper(df):
     counter = 0 
     for i in range(len(df)):
         if np.isnan(df.iloc[i].New_Widths) and counter == 0:
-            print(counter)
             new_df = df.iloc[i:i+1]
             counter += 1
         elif np.isnan(df.iloc[i].New_Widths) and counter != 0:
             new_df = new_df.append(df.iloc[i:i+1])
             counter+=1
-            print(counter)
-    print(new_df) 
     new_df.append(pd.Series(), ignore_index = True) 
     new_df.to_csv("optimized_unnested.csv")
     df.dropna(subset = ["New_Widths"])
@@ -33,25 +30,30 @@ def frame_generator(df, df_count):
     '''
     This function calls the dp algorithm in the file subset_sum_problem and writes the optimized patter onto a csv file called optimized.csv
     '''
-    number_of_sheets = 0
     new_req_sum = 5930
-    is_width_change = 1 
-    rep_counter = 0
     Area_sum = 0
     df_count  = df_count.sort_values(by = ["value"], ascending = False)
     df_count = df_count.reset_index(drop=True)
+    return_df = []
+    print("DF_count is \n \n")
     print(df_count)
     for i in range(len(df_count["value"])): 
 
         df_chunk = df[df.New_Widths == df_count["value"][i]]
-        print(" for case {}, width_change value is {}".format(i, is_width_change))
-        if is_width_change == 0:
-            sheet_counter, new_req_sum, is_width_change, rep_counter, Area_sum =  subset_sum_problem.input_function(df_chunk, new_req_sum, number_of_sheets, df_count["value"][i-1], rep_counter, Area_sum)
+        if len(return_df) != 0:
+             new_req_sum  , Area_sum, return_df =  subset_sum_problem.input_function(df_chunk, new_req_sum, df_count["value"][i-1], Area_sum, return_df)
         else:
-            sheet_counter, new_req_sum, is_width_change, rep_counter, Area_sum =  subset_sum_problem.input_function(df_chunk, new_req_sum, number_of_sheets, df_count["value"][i], rep_counter, Area_sum)
-        number_of_sheets+=sheet_counter
+             new_req_sum, Area_sum, return_df =  subset_sum_problem.input_function(df_chunk, new_req_sum, df_count["value"][i], Area_sum, return_df)
+
 
     print("File Generated!")
+
+    if not os.path.isfile("optimized.csv"):
+        return_df.to_csv("optimized.csv", header='column_names')
+    else:
+        return_df.to_csv("optimized.csv", mode='a', header=False)
+
+
 
 def rounder(x, loadbar_pitch):
 
@@ -71,6 +73,7 @@ if __name__ == "__main__":
     #Read from excel file
     global loadbar_pitch
     df, loadbar_pitch, framebar_thickness = UI_inter.main()
+    df["ORIGINAL_SPAN"] = df.SPAN
     df.SPAN = df.SPAN - 2*framebar_thickness
 
     #Variables for the system

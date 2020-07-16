@@ -11,7 +11,7 @@ def df_maker(df_imported, numbers):
     len_of_frame = len(df_imported)
     for number in numbers:
         for i in range(len_of_frame):
-            #print(i)
+
             if df_imported.iloc[i].SPAN == number and counter == 0:
                 new_df = df_imported.iloc[i:i+1]
                 counter += 1
@@ -82,118 +82,111 @@ def check_sum(input_list, req_sum, state_array):
 
     return(max_sum, list_of_numbers)
 
-def input_function(input_df, req_sum, sheet_number, input_width_value, rep_counter, Area_sum):
+def quantity_adder(new_df):
+ 
+            new_df = new_df.groupby(new_df.columns.tolist()).size().reset_index().rename(columns = {0:"Quantity"})
+            #print("post addition of qty \n\n")
+            #print(new_df)
+            return new_df
+
+def input_function(input_df, req_sum, input_width_value, Area_sum, old_df = []):
     '''
     Main function that takes in the input dataframe and outputs the optimized csv file, this function is called from the main problem
     '''
 
-    number_of_sheets = 0
     input_list = list(input_df["SPAN"])
-    cumulative_wastage = 0
-    initial_list = input_list.copy()
-    print("THIS IS THE NEW DATAFRAME BOOM \n")
-    print(input_df)
-    max_area = 5930*input_width_value
-    print(input_width_value)
-    list_of_new_widths = list(input_df["New_Widths"])
-    #Area_sum = 0
+    return_df = 0
+    min_sum = 0
+    if len(old_df) != 0:
+        min_sum = min(input_df.SPAN)
     while(len(input_list)!=0):
 
-        if rep_counter == 0:
-            Area_sum = 0
- 
+
         dp_table = np.zeros((len(input_list)+1, req_sum + 1))
         dp_table[:, 0] = 1
-
         max_sum, list_of_numbers = check_sum(input_list, req_sum, dp_table)
-        print("For the sum {} the list is {}".format(req_sum, list_of_numbers))
+        if len(list_of_numbers) == 0 and len(input_list) != 0 :
+
+            print("list of numbers {}, input list{}".format(list_of_numbers, input_list))
+            dp_table = np.zeros((len(input_list)+1, 5930 + 1))
+            dp_table[:, 0] = 1
+            max_sum, list_of_numbers = check_sum(input_list, 5930, dp_table)
+        print("For sum {} the list of numbers are {}".format(max_sum, list_of_numbers))
 
         if len(list_of_numbers) != 0:
-            #percentage_wastage = ((req_sum - max_sum)/req_sum) * 100
-            #percentage_wastage = round(percentage_wastage,2)
-            #cumulative_wastage += percentage_wastage
+
             input_df = input_df.reset_index(drop=True)
-            new_df = df_maker(input_df, list_of_numbers)
-            Area_sum =  Area_sum + sum(new_df["Area"])
-            print(Area_sum)
+            if len(old_df) == 0:
+                new_df = df_maker(input_df, list_of_numbers)
+                new_df = new_df.reset_index(drop=True)
+                new_df = quantity_adder(new_df)
+            else:
+                inter_df = df_maker(input_df, list_of_numbers)
+                inter_df = inter_df.reset_index(drop=True)
+                inter_df = quantity_adder(inter_df)
 
+                old_df = old_df.append(inter_df, ignore_index = True, sort = False)
+                new_df = old_df
 
-            new_df = new_df.sort_values(by = ["SPAN"], ascending = True)
-            dups = new_df.pivot_table(index = ["DRAWING NO","SPAN", "ERECTION_MARK", "WIDTH"], aggfunc='size')
-            new_df = new_df.drop_duplicates()
+            Area_sum =  sum(new_df["Area"]*new_df["Quantity"])
+            max_area = new_df.loc[0, "New_Widths"]*5930
+            new_df["DIMENSIONS"] = "{}X{}".format(5930, int(new_df.loc[0, "New_Widths"]))
+
+            # print("New Sheet: \n \n \n")
+            # print(new_df)
+            # print(" \n \n \n")
+            #
             total_area_percentage = (max_area - Area_sum)*100 / max_area
-
-            print("For the Area {}, the percentage wastage is {}".format(Area_sum, total_area_percentage))
+            print("Wastage area percentage is {}".format(total_area_percentage))
 
             if total_area_percentage >= 10:
-                 req_sum = req_sum - sum(new_df["SPAN"])
-                 is_width_change = 0
-                 width_value = input_width_value
-                 rep_counter = 1
+                 req_sum = 5930 - sum(new_df["SPAN"]*new_df["Quantity"])
+                 return_df = 1
+                 new_df["Area_percentage_wastage"] = [total_area_percentage]*len(new_df)
 
+                 if req_sum < min_sum:
+                     new_df["Area_percentage_wastage"] = [total_area_percentage]*len(new_df)
+                     req_sum = 5930
+                     Area_sum = 0
+                     return_df = 0
+                     old_df = []
+                     new_df = new_df.append(pd.Series(), ignore_index=True)
+
+                     if not os.path.isfile("optimized.csv"):
+                        new_df.to_csv("optimized.csv", header='column_names')
+                     else:
+                        new_df.to_csv("optimized.csv", mode='a', header=False)
             else:
+                 new_df["Area_percentage_wastage"] = [total_area_percentage]*len(new_df)
                  req_sum = 5930
                  Area_sum = 0
-                 is_width_change = 1
-                 width_value = list_of_new_widths[0]
-                 max_area = 5930*width_value
-                 rep_counter = 0
-                 number_of_sheets+=1
+                 return_df = 0
+                 old_df = []
 
 
+            if total_area_percentage < 10:
+                new_df = new_df.append(pd.Series(), ignore_index=True)
 
-            print("Max area {} and width_value {}".format(max_area, width_value))
-            new_df["Quantity"] = list(dups)
-            new_df["Dimensions"] = ["{}x{}".format(5930, width_value)]*len(new_df)
-            #new_df["Sheet_no"] = [sheet_number + number_of_sheets]*len(new_df)
-            #new_df["wastage"] = [percentage_wastage]*len(new_df) 
-            new_df["Area_Wastage"] = [total_area_percentage]*len(new_df)
-            new_df = new_df.drop(["Area"], axis = 1 )
-
-            # if total_area_percentage >= 12:
-            #      req_sum = req_sum - sum(new_df["SPAN"])
-            #      width_value = input_width_value 
-            #      rep_counter = 1 
-            #          
-            # else:
-            #      req_sum = 5930
-            #      width_value = 0
-            #      Area_sum = 0
-            #      rep_counter = 0 
-            #      new_df = new_df.append(pd.Series(), ignore_index=True)
-
-
-            if total_area_percentage < 10 or req_sum <= 350:
-                 new_df = new_df.append(pd.Series(), ignore_index=True)
-            # #new_df = new_df.drop(columns=new_df.columns[0])
-
-            if not os.path.isfile("optimized.csv"):
-                new_df.to_csv("optimized.csv", header='column_names')
-            else:
-                new_df.to_csv("optimized.csv", mode='a', header=False)
+                if not os.path.isfile("optimized.csv"):
+                    new_df.to_csv("optimized.csv", header='column_names')
+                else:
+                    new_df.to_csv("optimized.csv", mode='a', header=False)
 
 
             input_list = modifier(input_list, list_of_numbers)
 
-    # if total_area_percentage >= 10:
-    #     new_req_sum = req_sum - sum(new_df["SPAN"])
-    #     width_value = input_width_value 
-    #         
-    # else:
-    #     new_req_sum = 5930
-    #     width_value = 0
-    #
-
         else:
-            # req_sum = 5930
-            # Area_sum = 0
-            # rep_counter = 0 
-            # # blank_df = pd.Series()
-            # blank_df.to_csv("optimized.csv", mode='a', header=False)
-            return number_of_sheets, req_sum, is_width_change, rep_counter, Area_sum
+            if return_df == 0:
+                 req_sum = 5930
+                 Area_sum = 0
+                 return_df = 0
+                 old_df = []
+                 return  req_sum, Area_sum, []
+            else:
+                return req_sum, Area_sum, new_df
 
-    #total_wastage = req_sum*number_of_sheets - sum(initial_list)
-    #total_wastage_percentage = total_wastage/(req_sum*number_of_sheets)
-
-    return number_of_sheets, req_sum, is_width_change, rep_counter, Area_sum
+    if return_df == 0:
+        return  req_sum, Area_sum, []
+    else:
+        return req_sum, Area_sum, new_df
 
