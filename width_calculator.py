@@ -4,6 +4,7 @@ import pandas as pd
 import subset_sum_problem
 import UI_inter
 import numpy as np
+import excelwriter
 
 def newinput_checker(i):
 
@@ -23,6 +24,7 @@ def grouper(df):
             new_df = new_df.append(df.iloc[i:i+1])
             counter+=1
     new_df.append(pd.Series(), ignore_index = True) 
+    new_df = new_df.reset_index(drop=True)
     new_df.to_csv("optimized_unnested.csv")
     df.dropna(subset = ["New_Widths"])
     return df
@@ -53,7 +55,7 @@ def frame_generator(df, df_count):
     else:
         return_df.to_csv("optimized.csv", mode='a', header=False)
 
-
+     
 
 def rounder(x, loadbar_pitch):
 
@@ -63,6 +65,45 @@ def rounder(x, loadbar_pitch):
        return int(divided_value)
    else:
        return int(divided_value) + 1
+
+def sheet_no():
+
+    df = pd.read_csv("optimized.csv")
+    df["sheet_no"] = (pd.isna(df.SPAN).cumsum()) + 1
+    df.to_csv("optimized.csv")
+
+def type_writer():
+
+    df_nested = pd.read_csv("optimized.csv", index_col = 0)
+    df_nested = df_nested.dropna()
+    df_nested = df_nested.sort_values(by = ["TYPE"], ascending = False)
+    df_nested = df_nested.reset_index(drop=True)
+    df_nested.to_csv("sorted_nestings.csv")
+
+    # df_sorted = pd.DataFrame()
+    # df_sorted = df_sorted.append(pd.Series(), ignore_index = True)
+    # df_sorted = df_sorted.append(pd.Series(), ignore_index = True)
+    # df_sorted.to_csv("optimized_unnested.csv", mode='a', header=False)
+    #
+    # df_nested.to_csv("optimized_unnested.csv", mode='a', header=True)
+
+
+def framebar_cut():
+
+    df_opt = pd.read_csv("optimized.csv")
+    df_table = df_opt.loc[:, ["ERECTION_MARK", "DRAWING_NO", "New_Widths", "SPAN"]]
+    table = pd.pivot_table(df_table, index = ["ERECTION_MARK", "DRAWING NO"], aggfunc = "size")
+    table.append(pd.Series(), ignore_index = True)
+    table.append(pd.Series(), ignore_index = True)
+    table.to_csv("framebar_cut.csv")
+
+    print(table)
+
+    df_framebar = df_opt.loc[:, ["ERECTION_MARK", "New_Widths"]]
+    df_framebar["Framebar_Quantity"] = df_framebar["Quantity"]*2
+    df_framebar.append(pd.Series(), ignore_index = True)
+    df_framebar.append(pd.Series(), ignore_index = True)
+    df_framebar.to_csv("framebar_cut.csv", mode="a", header = True)
 
 if __name__ == "__main__":
 
@@ -110,3 +151,14 @@ if __name__ == "__main__":
     #Function call to call Algorithm that return suitable lengths
     frame_generator(df, df_count) 
 
+    #Function call to add sheet number to generated dataframe
+    sheet_no()
+
+    #Function call to create Framebar cutting sheet
+    #framebar_cut()
+
+    # Function to write by different types of TYPE
+    type_writer()
+
+    # Writing into excel file
+    excelwriter.write_to_excel()
