@@ -1,6 +1,12 @@
 import numpy as np
 import pandas as pd
 import os
+import math
+
+
+def roundup_100(span_display):
+
+    return int(math.ceil(span_display / 100.0)) * 100
 
 
 def df_maker(df_imported, numbers):
@@ -86,7 +92,6 @@ def quantity_adder(new_df):
  
             new_df = new_df.groupby(new_df.columns.tolist()).size().reset_index().rename(columns = {0:"Quantity"})
             #print("post addition of qty \n\n")
-            #print(new_df)
             return new_df
 
 def input_function(input_df, req_sum, input_width_value, Area_sum, old_df = []):
@@ -97,20 +102,42 @@ def input_function(input_df, req_sum, input_width_value, Area_sum, old_df = []):
     input_list = list(input_df["SPAN"])
     return_df = 0
     min_sum = 0
+    print("THIS IS THE INPUT DF \n \n \n")
+    print(input_df)
+    print("THIS IS THE OLD DF \n \n \n")
+    print(old_df)
     if len(old_df) != 0:
         min_sum = min(input_df.SPAN)
     while(len(input_list)!=0):
 
 
+        req_sum = int(req_sum)
         dp_table = np.zeros((len(input_list)+1, req_sum + 1))
         dp_table[:, 0] = 1
         max_sum, list_of_numbers = check_sum(input_list, req_sum, dp_table)
         if len(list_of_numbers) == 0 and len(input_list) != 0 :
-
+            # Moving into this loop if list if the required sum cannot be formed with the present values of input_list, hence we reset back to original sum values
             print("list of numbers {}, input list{}".format(list_of_numbers, input_list))
-            dp_table = np.zeros((len(input_list)+1, 5930 + 1))
-            dp_table[:, 0] = 1
-            max_sum, list_of_numbers = check_sum(input_list, 5930, dp_table)
+
+            print("OLD DF \n \n ")
+            print(old_df)
+            print("NEW DF \n \n")
+            print(input_df)
+            if len(old_df)!= 0:
+                old_df = old_df.append(pd.Series(), ignore_index=True)
+                if not os.path.isfile("optimized.csv"):
+                    old_df.to_csv("optimized.csv", header='column_names')
+                else:
+                    old_df.to_csv("optimized.csv", mode='a', header=False)
+                dp_table = np.zeros((len(input_list)+1, 5930 + 1))
+                dp_table[:, 0] = 1
+                max_sum, list_of_numbers = check_sum(input_list, 5930, dp_table)
+                old_df = []
+            else:
+                dp_table = np.zeros((len(input_list)+1, 5930 + 1))
+                dp_table[:, 0] = 1
+                max_sum, list_of_numbers = check_sum(input_list, 5930, dp_table)
+
         print("For sum {} the list of numbers are {}".format(max_sum, list_of_numbers))
 
         if len(list_of_numbers) != 0:
@@ -120,6 +147,7 @@ def input_function(input_df, req_sum, input_width_value, Area_sum, old_df = []):
                 new_df = df_maker(input_df, list_of_numbers)
                 new_df = new_df.reset_index(drop=True)
                 new_df = quantity_adder(new_df)
+                #print(new_df)
             else:
                 inter_df = df_maker(input_df, list_of_numbers)
                 inter_df = inter_df.reset_index(drop=True)
@@ -128,23 +156,36 @@ def input_function(input_df, req_sum, input_width_value, Area_sum, old_df = []):
                 old_df = old_df.append(inter_df, ignore_index = True, sort = False)
                 new_df = old_df
 
+            print("New DF \n \n \n")
+            print(new_df)
             Area_sum =  sum(new_df["Area"]*new_df["Quantity"])
             max_area = new_df.loc[0, "New_Widths"]*5930
-            new_df["DIMENSIONS"] = "{}X{}".format(5930, int(new_df.loc[0, "New_Widths"]))
+            span_display = sum(new_df["SPAN"]*new_df["Quantity"])
+            if span_display > 5600:
+                display = 6000
+            else:
+                display = roundup_100(span_display)
+            new_df["DIMENSIONS"] = "{}X{}".format(display, int(new_df.loc[0, "New_Widths"]))
 
             # print("New Sheet: \n \n \n")
             # print(new_df)
             # print(" \n \n \n")
-            #
+
             total_area_percentage = (max_area - Area_sum)*100 / max_area
             print("Wastage area percentage is {}".format(total_area_percentage))
 
-            if total_area_percentage >= 10:
+            if total_area_percentage >= 0:
                  req_sum = 5930 - sum(new_df["SPAN"]*new_df["Quantity"])
                  return_df = 1
                  new_df["Area_percentage_wastage"] = [total_area_percentage]*len(new_df)
 
-                 if req_sum < min_sum:
+                 print("MIN SUM \n \n \n")
+                 print(min_sum)
+
+                 if req_sum < 0:
+                     print("\n \n \n")
+                     print("TRUE")
+                     print("REQUIRED SUM {}, MINIMUM SUM {}".format(req_sum, min_sum))
                      new_df["Area_percentage_wastage"] = [total_area_percentage]*len(new_df)
                      req_sum = 5930
                      Area_sum = 0
@@ -165,7 +206,7 @@ def input_function(input_df, req_sum, input_width_value, Area_sum, old_df = []):
 
 
             if total_area_percentage < 10:
-                new_df = new_df.append(pd.Series(), ignore_index=True)
+                new_df = new_df.append(pd.Series(sum(new_df["SPAN"]*new_df["Quantity"])), ignore_index=True)
 
                 if not os.path.isfile("optimized.csv"):
                     new_df.to_csv("optimized.csv", header='column_names')

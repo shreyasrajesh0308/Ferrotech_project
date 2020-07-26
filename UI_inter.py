@@ -31,14 +31,16 @@ def get_save_Excel():
     global col 
     global row
     col=len(data.columns)
+    print(data.columns)
     row=len(data.index)
     arr_str=["TYPE",  "DRAWING NO", "ERECTION MARK", "SPAN (mm)", "WIDTH (mm)", "QTY (Nos)"]
-    for f in range(6):
+    for f in range(len(arr_str)):
         for i in range(row):
             for j in range(col):
                 if(data.iloc[i, j]== arr_str[f]):
                     df[arr_str[f]]= data.iloc[i+1 :row, j]
-    df=df.dropna()
+    df = df[df['SPAN (mm)'].notna()]
+
     df.reset_index(drop=True, inplace=True)
     df.index += 1 
     df = df.rename(columns={'ERECTION MARK' : 'ERECTION_MARK', 'SPAN (mm)' : 'SPAN', 'WIDTH (mm)' : 'WIDTH', 'QTY (Nos)' : 'QTY'})
@@ -53,6 +55,9 @@ def save():
     global frame_bar
     frame_bar= str(entry2.get())
     frame_bar = int(frame_bar)
+    global weight
+    weight = str(entry3.get())
+    weight = int(weight)
     root.destroy()
 
 #button definition
@@ -64,11 +69,14 @@ def main():
     browseButton_Excel_3 = tk.Button(text='Save & Exit', command=save, bg='white', fg='black', font=('times', 30, 'bold'))
 
     #text_field definition
-    global entry1, entry2
+    global entry1, entry2, entry3
     entry1 = tk.Entry(root)
     label1 = tk.Label(root, text = 'LB Pitch', bg = 'lightsteelblue', font = ('times', 20, 'bold'))
     entry2 = tk.Entry(root)
     label2 = tk.Label(root, text = 'Frame Bar', bg = 'lightsteelblue', font = ('times', 20, 'bold'))
+    entry3 = tk.Entry(root)
+    label3 = tk.Label(root, text = 'Weight_sqmeter', bg = 'lightsteelblue', font = ('times', 20, 'bold'))
+
 
     #creating a window
     canvas1.create_window(300, 100, window=browseButton_Excel)
@@ -77,7 +85,9 @@ def main():
     canvas1.create_window(200, 500, window=label1)
     canvas1.create_window(400, 600, window=entry2)
     canvas1.create_window(200, 600, window=label2)
+    canvas1.create_window(400, 400, window=entry3)
+    canvas1.create_window(200, 400, window=label3)
     canvas1.create_window(300, 700, window=browseButton_Excel_3)
 
     root.mainloop()
-    return df, lb_pitch,frame_bar  
+    return df, lb_pitch,frame_bar, weight

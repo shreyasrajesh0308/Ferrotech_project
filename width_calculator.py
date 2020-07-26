@@ -6,14 +6,37 @@ import UI_inter
 import numpy as np
 import excelwriter
 
+def weight_adder(df):
+
+    df["WEIGHT"] = df.ORIGINAL_SPAN*df.WIDTH*weight
+    return df
+def Area_calculator(df):
+
+    df["Alternate_Width"] = df["WIDTH"]
+    df.loc[df.Alternate_Width > max_width, "Alternate_Width"] = max_width
+    df["Area"] = df["SPAN"]*df["Alternate_Width"]
+    df = df.drop("Alternate_Width", axis = 1)
+    return df
+def difference(df):
+
+     df["DIFFERENCE"] = df["WIDTH"] - df["New_Widths"]
+     df.loc[df.WIDTH < 1000, "DIFFERENCE"] = np.nan
+
+     return df 
 def newinput_checker(i):
 
    if i <= max_width:
        return i 
-   elif i > max_width and i < upper_bound:
-       return max_width
+   # elif i > max_width and i < upper_bound:
+   #      return max_width
+   # # elif i > max_width:
+   # #     return max_width
+   # else:
+   #      return np.nan
    else:
-       return np.nan
+       return max_width
+
+
 def grouper(df):
     counter = 0 
     for i in range(len(df)):
@@ -50,18 +73,19 @@ def frame_generator(df, df_count):
 
     print("File Generated!")
 
-    if not os.path.isfile("optimized.csv"):
-        return_df.to_csv("optimized.csv", header='column_names')
-    else:
-        return_df.to_csv("optimized.csv", mode='a', header=False)
+    if len(return_df) != 0:
+        if not os.path.isfile("optimized.csv"):
+            return_df.to_csv("optimized.csv", header='column_names')
+        else:
+            return_df.to_csv("optimized.csv", mode='a', header=False)
 
-     
+
 
 def rounder(x, loadbar_pitch):
 
    divided_value = x/loadbar_pitch
 
-   if divided_value - int(divided_value) < 0.3:
+   if divided_value - int(divided_value) < 0.4:
        return int(divided_value)
    else:
        return int(divided_value) + 1
@@ -112,8 +136,8 @@ if __name__ == "__main__":
         os.remove("optimized.csv")
 
     #Read from excel file
-    global loadbar_pitch
-    df, loadbar_pitch, framebar_thickness = UI_inter.main()
+    global loadbar_pitch, weight
+    df, loadbar_pitch, framebar_thickness, weight = UI_inter.main()
     df["ORIGINAL_SPAN"] = df.SPAN
     df.SPAN = df.SPAN - 2*framebar_thickness
 
@@ -124,16 +148,28 @@ if __name__ == "__main__":
     # Calculating new width values
     global max_width, upper_bound
     max_width = int(panel_max_width/loadbar_pitch)*loadbar_pitch + framebar_thickness
-    upper_bound = (int(panel_max_width/loadbar_pitch) + 0.3)*loadbar_pitch
+    upper_bound = (int(panel_max_width/loadbar_pitch) + 0.4)*loadbar_pitch
  
     new_input_widths = [rounder(x,loadbar_pitch)*loadbar_pitch + framebar_thickness for x in input_widths]
     new_input_widths = [newinput_checker(i) for i in new_input_widths]
 
     df["New_Widths"] = new_input_widths
 
-    df = grouper(df)
+    #df = difference(df)
 
-    df["Area"] = df["WIDTH"]*df["SPAN"]
+
+
+    # if max(df.WIDTH) > upper_bound:
+    #     df = grouper(df)
+    # else:
+    #     empty_df = pd.DataFrame(columns = df.columns)
+    #     empty_df.to_csv("optimized_unnested.csv")
+
+
+    #df["Area"] = df["WIDTH"]*df["SPAN"]
+
+    df = Area_calculator(df)
+    df = weight_adder(df)
 
     # Adding a new_widths column and repeat the rows based on quantity
     df = df.sort_values(by = ['New_Widths'], ascending = False)
