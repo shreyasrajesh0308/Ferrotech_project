@@ -32,20 +32,21 @@ def get_save_Excel():
     global row
     col=len(data.columns)
     row=len(data.index)
-    arr_str=["TYPE",  "DRAWING NO", "ERECTION MARK", "SPAN (mm)", "WIDTH (mm)", "QTY (Nos)"]
+    arr_str=["TYPE",  "DRAWING NO", "ERECTION MARK", "SPAN (mm)", "WIDTH (mm)", "QTY (Nos)", "TOE PLATE LENGTH"]
     for f in range(len(arr_str)):
-        for i in range(row):
-            for j in range(col):
+        for j in range(col):
+            for i in range(row):
                 if(data.iloc[i, j]== arr_str[f]):
                     df[arr_str[f]]= data.iloc[i+1 :row, j]
     df = df[df['SPAN (mm)'].notna()]
+    df = df.fillna(0)
     #df = df.dropna()
 
     df.reset_index(drop=True, inplace=True)
     df.index += 1 
     df = df.rename(columns={'ERECTION MARK' : 'ERECTION_MARK', 'SPAN (mm)' : 'SPAN', 'WIDTH (mm)' : 'WIDTH', 'QTY (Nos)' : 'QTY'})
-    export_file_path= 'Filtered_file.xlsx'
-    df.to_excel(export_file_path)
+    #export_file_path= 'Filtered_file.xlsx'
+    #df.to_excel(export_file_path)
 
 #save and exit button
 def save():

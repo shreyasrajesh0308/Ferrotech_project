@@ -186,9 +186,9 @@ def df_maker(df_imported, numbers):
 def type_writer(df_nested):
 
     df_nested = df_nested[df_nested['CUTTING_SPAN'].notna()]
-    df_nested = df_nested.sort_values(by = ["TYPE", "DRAWING NO", "ERECTION_MARK"], ascending = False)
+    df_nested = df_nested.sort_values(by = ["DRAWING NO", "TYPE","ERECTION_MARK"], ascending = False)
     df_nested = df_nested.reset_index(drop=True)
-    df_nested.to_csv("sorted_nestings.csv")
+    df_nested.to_csv(input_file_name[0:-4] + "sorted_nestings.csv")
     return df_nested
 
 def excel_writer(final_df,  sortednest_df, input_file_name):
@@ -370,6 +370,7 @@ if __name__ == "__main__":
     final_df = final_df.drop(["WIDTH", "SPAN", "New_Widths", "Area"], axis = 1)
         #df = df[["DRAWING NO", "ERECTION_MARK", "TYPE", "ORIGINAL_SPAN", "ORIGINAL_WIDTH", "CUTTING_SPAN", "STD_WIDTH", "QUANTITY", "ORIGINAL_AREA","WEIGHT", "PANEL_SIZE", "SHEET_NO", "Area_percentage_wastage", "ADD_WIDTH"]]
     if "TOE PLATE LENGTH" in final_df.columns:
+        final_df["TOE PLATE LENGTH"] = final_df["TOE PLATE LENGTH"].replace(0, np.nan)
         final_df = final_df[["DRAWING NO", "ERECTION_MARK", "TYPE", "ORIGINAL_SPAN", "ORIGINAL_WIDTH", "CUTTING_SPAN", "STD_WIDTH", "QUANTITY", "ORIGINAL_AREA","WEIGHT", "TOE PLATE LENGTH", "PANEL_SIZE", "SHEET_NO", "PERCENTAGE_LENGTH_WASTAGE","ADD_WIDTH"]]
     else:
         final_df = final_df[["DRAWING NO", "ERECTION_MARK", "TYPE", "ORIGINAL_SPAN", "ORIGINAL_WIDTH", "CUTTING_SPAN", "STD_WIDTH", "QUANTITY", "ORIGINAL_AREA","WEIGHT", "PANEL_SIZE", "SHEET_NO", "PERCENTAGE_LENGTH_WASTAGE","ADD_WIDTH"]]
