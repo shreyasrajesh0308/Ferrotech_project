@@ -21,7 +21,7 @@ canvas1.pack()
 #pre-processing data
 def get_save_Excel():
     
-    global data
+    global data, import_file_path
     import_file_path = filedialog.askopenfilename()
     data = pd.read_excel(import_file_path)
 
@@ -31,7 +31,6 @@ def get_save_Excel():
     global col 
     global row
     col=len(data.columns)
-    print(data.columns)
     row=len(data.index)
     arr_str=["TYPE",  "DRAWING NO", "ERECTION MARK", "SPAN (mm)", "WIDTH (mm)", "QTY (Nos)"]
     for f in range(len(arr_str)):
@@ -40,6 +39,7 @@ def get_save_Excel():
                 if(data.iloc[i, j]== arr_str[f]):
                     df[arr_str[f]]= data.iloc[i+1 :row, j]
     df = df[df['SPAN (mm)'].notna()]
+    #df = df.dropna()
 
     df.reset_index(drop=True, inplace=True)
     df.index += 1 
@@ -90,4 +90,4 @@ def main():
     canvas1.create_window(300, 700, window=browseButton_Excel_3)
 
     root.mainloop()
-    return df, lb_pitch,frame_bar, weight
+    return df, lb_pitch,frame_bar, weight, import_file_path
