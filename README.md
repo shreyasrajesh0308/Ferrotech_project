@@ -12,14 +12,22 @@ This involves building a DP matrix and once built we traverse the tree back from
 
 Building the DP matrix is discussed [here](https://www.geeksforgeeks.org/subset-sum-problem-dp-25/)
 
-# Code
+# Running the Code
 
-The codebase involves three files.
+Run the Ferrotech_project.py file this will open a dialogue box where we load the required excel file along with certain input parameters. The output is written into an excel file.
 
-1. Algorithm file - Algo implementation
-2. UI file - Takes input excel file and loadbar and framebar pitch.
-3. Main file - Takes the input using the UI program cleans the data and uses the Algo file to write into a output CSV file.
+# Code structure
 
-:
+Code base consists of two files.
+
+UI_inter - For all UI related tasks.
+
+Ferrotech_project - Contains everything else, from adding required colums to calling the algorithm and writing into excel file.
+
+For any modifications and experimentation run the jupyternotebook of the same name before integrating into the python file.
+
+
+
+
 
 
