@@ -58,7 +58,10 @@ def save():
     frame_bar = int(frame_bar)
     global weight
     weight = str(entry3.get())
-    weight = int(weight)
+    weight = float(weight)
+    global max_sum 
+    max_sum = str(entry4.get())
+    max_sum = int(max_sum)
     root.destroy()
 
 #button definition
@@ -70,14 +73,15 @@ def main():
     browseButton_Excel_3 = tk.Button(text='Save & Exit', command=save, bg='white', fg='black', font=('times', 30, 'bold'))
 
     #text_field definition
-    global entry1, entry2, entry3
+    global entry1, entry2, entry3, entry4
     entry1 = tk.Entry(root)
     label1 = tk.Label(root, text = 'LB Pitch', bg = 'lightsteelblue', font = ('times', 20, 'bold'))
     entry2 = tk.Entry(root)
     label2 = tk.Label(root, text = 'Frame Bar', bg = 'lightsteelblue', font = ('times', 20, 'bold'))
     entry3 = tk.Entry(root)
     label3 = tk.Label(root, text = 'Weight_sqmeter', bg = 'lightsteelblue', font = ('times', 20, 'bold'))
-
+    entry4 = tk.Entry(root)
+    label4 = tk.Label(root, text = 'Max Length', bg = 'lightsteelblue', font = ('times', 20, 'bold'))
 
     #creating a window
     canvas1.create_window(300, 100, window=browseButton_Excel)
@@ -88,7 +92,9 @@ def main():
     canvas1.create_window(200, 600, window=label2)
     canvas1.create_window(400, 400, window=entry3)
     canvas1.create_window(200, 400, window=label3)
+    canvas1.create_window(400, 200, window=entry4)
+    canvas1.create_window(200, 200, window=label4)
     canvas1.create_window(300, 700, window=browseButton_Excel_3)
 
     root.mainloop()
-    return df, lb_pitch,frame_bar, weight, import_file_path
+    return df, lb_pitch,frame_bar, weight, max_sum,  import_file_path

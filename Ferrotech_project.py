@@ -55,6 +55,7 @@ def Area_calculator(df):
     df["Alternate_Width"] = df["WIDTH"]
     df.loc[df.Alternate_Width > max_width, "Alternate_Width"] = max_width
     df["Area"] = df["SPAN"]*df["Alternate_Width"]
+
     df = df.drop("Alternate_Width", axis = 1)
     return df
 
@@ -183,12 +184,31 @@ def df_maker(df_imported, numbers):
 
 
 # Function to sort by required parameters
-def type_writer(df_nested):
+def type_writer(df):
 
-    df_nested = df_nested[df_nested['CUTTING_SPAN'].notna()]
-    df_nested = df_nested.sort_values(by = ["DRAWING NO", "TYPE","ERECTION_MARK"], ascending = False)
+    #df_nested = df_nested[df_nested['CUTTING_SPAN'].notna()]
+    df_nested = df
+    df_nested["ORIGINAL_AREA"] = df_nested["ORIGINAL_SPAN"]*df_nested["WIDTH"]*df_nested["QTY"]/10**6   
+    df_nested["WEIGHT"] = df_nested["WEIGHT"]*df_nested["QTY"]/10**6
+    df_nested = df_nested.sort_values(by = ["DRAWING NO", "TYPE","ERECTION_MARK"], ascending = True)
     df_nested = df_nested.reset_index(drop=True)
+
+    df_nested["ORIGINAL_WIDTH"] = df_nested["WIDTH"]
+
+    if "TOE PLATE LENGTH" in df_nested.columns:
+        df_nested["TOE PLATE LENGTH"] = df_nested["TOE PLATE LENGTH"]*df_nested["QTY"]
+        df_nested["TOE PLATE LENGTH"] = df_nested["TOE PLATE LENGTH"].replace(0, np.nan)
+        df_nested = df_nested[["DRAWING NO", "TYPE", "ERECTION_MARK", "ORIGINAL_SPAN", "ORIGINAL_WIDTH", "QTY", "ORIGINAL_AREA","WEIGHT", "TOE PLATE LENGTH"]]
+    else:
+        df_nested = df_nested[["DRAWING NO","TYPE", "ERECTION_MARK", "ORIGINAL_SPAN", "ORIGINAL_WIDTH", "QTY", "ORIGINAL_AREA","WEIGHT"]]
+
+
+    #df_nested = df_nested.drop(["WIDTH", "SPAN", "New_Widths", "Area"], axis = 1)
+
+
     df_nested.to_csv(input_file_name[0:-4] + "sorted_nestings.csv")
+
+
     return df_nested
 
 def excel_writer(final_df,  sortednest_df, input_file_name):
@@ -204,7 +224,7 @@ def excel_writer(final_df,  sortednest_df, input_file_name):
 
 if __name__ == "__main__":
 
-    df_original, loadbar_pitch, framebar_thickness, weight, input_file_name = UI_inter.main()
+    df_original, loadbar_pitch, framebar_thickness, weight, max_sum, input_file_name = UI_inter.main()
 
     # Defining input parameters.
 
@@ -215,7 +235,7 @@ if __name__ == "__main__":
     #framebar_thickness = 5
     #weight = 100
     panel_max_width = 1000
-    max_sum = 5930
+    #max_sum = 5930
     threshold = 200
 
 
@@ -256,6 +276,7 @@ if __name__ == "__main__":
 
     # Duplicatiing Quantity
 
+    sortednest_df = type_writer(df_original)
     df_original = df_original.loc[df_original.index.repeat(df_original.QTY)]
     df_original = df_original.drop(['QTY'], axis=1)
     df_original = df_original.reset_index(drop=True)
@@ -363,32 +384,54 @@ if __name__ == "__main__":
     final_df["ORIGINAL_WIDTH"] = final_df["WIDTH"]
     final_df["CUTTING_SPAN"] = final_df["SPAN"]
     final_df["STD_WIDTH"] = final_df["New_Widths"]
-    final_df["ORIGINAL_AREA"] = final_df["ORIGINAL_SPAN"]*final_df["ORIGINAL_WIDTH"]/10**6   
-    final_df["WEIGHT"] = final_df["WEIGHT"]/10**6
+    final_df["ORIGINAL_AREA"] = final_df["ORIGINAL_SPAN"]*final_df["ORIGINAL_WIDTH"]*final_df["QUANTITY"]/10**6   
+    final_df["WEIGHT"] = final_df["WEIGHT"]*final_df["QUANTITY"]
+    final_df = final_df.round({'ORIGINAL_AREA': 2, 'WEIGHT': 2})
 
 
     final_df = final_df.drop(["WIDTH", "SPAN", "New_Widths", "Area"], axis = 1)
         #df = df[["DRAWING NO", "ERECTION_MARK", "TYPE", "ORIGINAL_SPAN", "ORIGINAL_WIDTH", "CUTTING_SPAN", "STD_WIDTH", "QUANTITY", "ORIGINAL_AREA","WEIGHT", "PANEL_SIZE", "SHEET_NO", "Area_percentage_wastage", "ADD_WIDTH"]]
     if "TOE PLATE LENGTH" in final_df.columns:
+        final_df["TOE PLATE LENGTH"] = final_df["TOE PLATE LENGTH"]*final_df["QUANTITY"]
+        sum_of_Quantity = sum(final_df.QUANTITY.fillna(0))
+        sum_of_Area = sum(final_df.ORIGINAL_AREA.fillna(0))
+        sum_of_weight = sum(final_df.WEIGHT.fillna(0))
+        last_sheet_no = max(final_df.SHEET_NO.fillna(0))
+        sum_of_toeplate = sum(final_df["TOE PLATE LENGTH"].fillna(0))
+
         final_df["TOE PLATE LENGTH"] = final_df["TOE PLATE LENGTH"].replace(0, np.nan)
         final_df = final_df[["DRAWING NO", "ERECTION_MARK", "TYPE", "ORIGINAL_SPAN", "ORIGINAL_WIDTH", "CUTTING_SPAN", "STD_WIDTH", "QUANTITY", "ORIGINAL_AREA","WEIGHT", "TOE PLATE LENGTH", "PANEL_SIZE", "SHEET_NO", "PERCENTAGE_LENGTH_WASTAGE","ADD_WIDTH"]]
-    else:
-        final_df = final_df[["DRAWING NO", "ERECTION_MARK", "TYPE", "ORIGINAL_SPAN", "ORIGINAL_WIDTH", "CUTTING_SPAN", "STD_WIDTH", "QUANTITY", "ORIGINAL_AREA","WEIGHT", "PANEL_SIZE", "SHEET_NO", "PERCENTAGE_LENGTH_WASTAGE","ADD_WIDTH"]]
+        final_row = {"DRAWING NO" : "TOTAL", "ERECTION_MARK" : np.nan, "TYPE": np.nan, "ORIGINAL_SPAN": np.nan, "ORIGINAL_WIDTH": np.nan, "CUTTING_SPAN": np.nan, "STD_WIDTH": np.nan, "QUANTITY": sum_of_Quantity, "ORIGINAL_AREA": sum_of_Area, "WEIGHT": sum_of_weight, "TOE PLATE LENGTH": sum_of_toeplate,  "PANEL_SIZE": np.nan, "SHEET_NO": last_sheet_no, "PERCENTAGE_LENGTH_WASTAGE": np.nan,"ADD_WIDTH": np.nan }
+        total_df = pd.DataFrame(data = final_row, index = [0])
+        total_df = total_df.append(final_df, ignore_index = True)
+        total_df = total_df.reset_index(drop=True)
 
-    
+    else:
+        
+        sum_of_Quantity = sum(final_df.QUANTITY.fillna(0))
+        sum_of_Area = sum(final_df.ORIGINAL_AREA.fillna(0))
+        sum_of_weight = sum(final_df.WEIGHT.fillna(0))
+        last_sheet_no = max(final_df.SHEET_NO.fillna(0))
+        final_df = final_df[["DRAWING NO", "ERECTION_MARK", "TYPE", "ORIGINAL_SPAN", "ORIGINAL_WIDTH", "CUTTING_SPAN", "STD_WIDTH", "QUANTITY", "ORIGINAL_AREA","WEIGHT", "PANEL_SIZE", "SHEET_NO", "PERCENTAGE_LENGTH_WASTAGE","ADD_WIDTH"]]
+        final_row = {"DRAWING NO" : "TOTAL", "ERECTION_MARK" : np.nan, "TYPE": np.nan, "ORIGINAL_SPAN": np.nan, "ORIGINAL_WIDTH": np.nan, "CUTTING_SPAN": np.nan, "STD_WIDTH": np.nan, "QUANTITY": sum_of_Quantity, "ORIGINAL_AREA": sum_of_Area, "WEIGHT": sum_of_weight, "PANEL_SIZE": np.nan, "SHEET_NO": last_sheet_no, "PERCENTAGE_LENGTH_WASTAGE": np.nan,"ADD_WIDTH": np.nan }
+        total_df = pd.DataFrame(data = final_row, index = [0])
+        total_df = total_df.append(final_df, ignore_index = True)
+        total_df = total_df.reset_index(drop=True)
     # Creating a sorted list based on requirments
 
-    sortednest_df = type_writer(final_df)        
+    #sortednest_df = type_writer(final_df)        
 
 
     # Outputting the optimized dataframe and removing from original dataframe
 
     # In[49]:
 
+    
 
-    final_df.to_csv(input_file_name[0:-4] + "_optimized.csv")
 
-    excel_writer(final_df, sortednest_df, input_file_name)
+    total_df.to_csv(input_file_name[0:-4] + "_optimized.csv")
+
+    excel_writer(total_df, sortednest_df, input_file_name)
 
 
 
