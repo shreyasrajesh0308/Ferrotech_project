@@ -54,7 +54,7 @@ def Area_calculator(df):
 
     df["Alternate_Width"] = df["WIDTH"]
     df.loc[df.Alternate_Width > max_width, "Alternate_Width"] = max_width
-    df["Area"] = df["SPAN"]*df["Alternate_Width"]
+    df["Area"] = df["ORIGINAL_SPAN"]*df["Alternate_Width"]
 
     df = df.drop("Alternate_Width", axis = 1)
     return df
@@ -206,7 +206,7 @@ def type_writer(df):
     #df_nested = df_nested.drop(["WIDTH", "SPAN", "New_Widths", "Area"], axis = 1)
 
 
-    df_nested.to_csv(input_file_name[0:-4] + "sorted_nestings.csv")
+    #df_nested.to_csv(input_file_name[0:-4] + "sorted_nestings.csv")
 
 
     return df_nested
@@ -290,6 +290,7 @@ if __name__ == "__main__":
     df_current_width = df_original.loc[df_original.New_Widths == current_width_value]
     counter = 0
     sheet_no = 0
+    total_area_created = 0
     while len(df_current_width) != 0:
         
         return_sum, list_of_spans = check_sum(list(df_current_width.SPAN), max_sum)
@@ -314,7 +315,12 @@ if __name__ == "__main__":
                     new_df["PANEL_SIZE"] = "{}X{}".format(6000, max(new_df.New_Widths))
                 else:
                     new_df["PANEL_SIZE"] = "{}X{}".format(roundup_100(sum(new_df.SPAN)), max(new_df.New_Widths))
-                    
+
+                if sum(new_df.SPAN) > 3000:
+                    total_area_created+= 6000*max(new_df.New_Widths)
+                else:
+                    total_area_created+= roundup_100(sum(new_df.SPAN))*max(new_df.New_Widths)
+
                 new_df = quantity_adder(new_df)
                 
                 new_df = new_df.append(pd.Series(), ignore_index=True)
@@ -338,6 +344,12 @@ if __name__ == "__main__":
                     new_df["PANEL_SIZE"] = "{}X{}".format(6000, max(new_df.New_Widths))
                 else:
                     new_df["PANEL_SIZE"] = "{}X{}".format(roundup_100(sum(new_df.SPAN)), max(new_df.New_Widths))
+
+                if sum(new_df.SPAN) > 3000:
+                    total_area_created+= 6000*max(new_df.New_Widths)
+                else:
+                    total_area_created+= roundup_100(sum(new_df.SPAN))*max(new_df.New_Widths)
+
                 new_df = quantity_adder(new_df)
                 new_df = new_df.append(pd.Series(), ignore_index=True)
                 final_df = final_df.append(new_df)
@@ -352,8 +364,16 @@ if __name__ == "__main__":
             new_df["SHEET_NO"]=int(sheet_no)
             if sum(new_df.SPAN) > 5600:
                     new_df["PANEL_SIZE"] = "{}X{}".format(6000, max(new_df.New_Widths))
+                    
             else:
                     new_df["PANEL_SIZE"] = "{}X{}".format(roundup_100(sum(new_df.SPAN)), max(new_df.New_Widths))
+
+            if sum(new_df.SPAN) > 3000:
+                    total_area_created+= 6000*max(new_df.New_Widths)
+            else:
+                    total_area_created+= roundup_100(sum(new_df.SPAN))*max(new_df.New_Widths)
+            
+
             new_df = quantity_adder(new_df)
             new_df = new_df.append(pd.Series(), ignore_index=True)
             final_df = final_df.append(new_df)
@@ -388,8 +408,12 @@ if __name__ == "__main__":
     final_df["WEIGHT"] = final_df["WEIGHT"]*final_df["QUANTITY"]
     final_df = final_df.round({'ORIGINAL_AREA': 2, 'WEIGHT': 2})
 
+    total_area_needed = sum(final_df.Area.fillna(0)*final_df.QUANTITY.fillna(0))
+
 
     final_df = final_df.drop(["WIDTH", "SPAN", "New_Widths", "Area"], axis = 1)
+    total_area_wastage = (total_area_created - total_area_needed)*100/total_area_created
+
         #df = df[["DRAWING NO", "ERECTION_MARK", "TYPE", "ORIGINAL_SPAN", "ORIGINAL_WIDTH", "CUTTING_SPAN", "STD_WIDTH", "QUANTITY", "ORIGINAL_AREA","WEIGHT", "PANEL_SIZE", "SHEET_NO", "Area_percentage_wastage", "ADD_WIDTH"]]
     if "TOE PLATE LENGTH" in final_df.columns:
         final_df["TOE PLATE LENGTH"] = final_df["TOE PLATE LENGTH"]*final_df["QUANTITY"]
@@ -401,7 +425,7 @@ if __name__ == "__main__":
 
         final_df["TOE PLATE LENGTH"] = final_df["TOE PLATE LENGTH"].replace(0, np.nan)
         final_df = final_df[["DRAWING NO", "ERECTION_MARK", "TYPE", "ORIGINAL_SPAN", "ORIGINAL_WIDTH", "CUTTING_SPAN", "STD_WIDTH", "QUANTITY", "ORIGINAL_AREA","WEIGHT", "TOE PLATE LENGTH", "PANEL_SIZE", "SHEET_NO", "PERCENTAGE_LENGTH_WASTAGE","ADD_WIDTH"]]
-        final_row = {"DRAWING NO" : "TOTAL", "ERECTION_MARK" : np.nan, "TYPE": np.nan, "ORIGINAL_SPAN": np.nan, "ORIGINAL_WIDTH": np.nan, "CUTTING_SPAN": np.nan, "STD_WIDTH": np.nan, "QUANTITY": sum_of_Quantity, "ORIGINAL_AREA": sum_of_Area, "WEIGHT": sum_of_weight, "TOE PLATE LENGTH": sum_of_toeplate,  "PANEL_SIZE": np.nan, "SHEET_NO": last_sheet_no, "PERCENTAGE_LENGTH_WASTAGE": np.nan,"ADD_WIDTH": np.nan }
+        final_row = {"DRAWING NO" : "TOTAL", "ERECTION_MARK" : np.nan, "TYPE": np.nan, "ORIGINAL_SPAN": np.nan, "ORIGINAL_WIDTH": np.nan, "CUTTING_SPAN": np.nan, "STD_WIDTH": np.nan, "QUANTITY": sum_of_Quantity, "ORIGINAL_AREA": sum_of_Area, "WEIGHT": sum_of_weight, "TOE PLATE LENGTH": sum_of_toeplate,  "PANEL_SIZE": np.nan, "SHEET_NO": last_sheet_no, "PERCENTAGE_LENGTH_WASTAGE": total_area_wastage,"ADD_WIDTH": np.nan }
         total_df = pd.DataFrame(data = final_row, index = [0])
         total_df = total_df.append(final_df, ignore_index = True)
         total_df = total_df.reset_index(drop=True)
@@ -413,7 +437,7 @@ if __name__ == "__main__":
         sum_of_weight = sum(final_df.WEIGHT.fillna(0))
         last_sheet_no = max(final_df.SHEET_NO.fillna(0))
         final_df = final_df[["DRAWING NO", "ERECTION_MARK", "TYPE", "ORIGINAL_SPAN", "ORIGINAL_WIDTH", "CUTTING_SPAN", "STD_WIDTH", "QUANTITY", "ORIGINAL_AREA","WEIGHT", "PANEL_SIZE", "SHEET_NO", "PERCENTAGE_LENGTH_WASTAGE","ADD_WIDTH"]]
-        final_row = {"DRAWING NO" : "TOTAL", "ERECTION_MARK" : np.nan, "TYPE": np.nan, "ORIGINAL_SPAN": np.nan, "ORIGINAL_WIDTH": np.nan, "CUTTING_SPAN": np.nan, "STD_WIDTH": np.nan, "QUANTITY": sum_of_Quantity, "ORIGINAL_AREA": sum_of_Area, "WEIGHT": sum_of_weight, "PANEL_SIZE": np.nan, "SHEET_NO": last_sheet_no, "PERCENTAGE_LENGTH_WASTAGE": np.nan,"ADD_WIDTH": np.nan }
+        final_row = {"DRAWING NO" : "TOTAL", "ERECTION_MARK" : np.nan, "TYPE": np.nan, "ORIGINAL_SPAN": np.nan, "ORIGINAL_WIDTH": np.nan, "CUTTING_SPAN": np.nan, "STD_WIDTH": np.nan, "QUANTITY": sum_of_Quantity, "ORIGINAL_AREA": sum_of_Area, "WEIGHT": sum_of_weight, "PANEL_SIZE": np.nan, "SHEET_NO": last_sheet_no, "PERCENTAGE_LENGTH_WASTAGE": total_area_wastage,"ADD_WIDTH": np.nan }
         total_df = pd.DataFrame(data = final_row, index = [0])
         total_df = total_df.append(final_df, ignore_index = True)
         total_df = total_df.reset_index(drop=True)
@@ -429,7 +453,9 @@ if __name__ == "__main__":
     
 
 
-    total_df.to_csv(input_file_name[0:-4] + "_optimized.csv")
+    #total_df.to_csv(input_file_name[0:-4] + "_optimized.csv")
+
+    #print("WASTAGE IS {}".format((total_area_created - total_area_needed)*100/total_area_created))
 
     excel_writer(total_df, sortednest_df, input_file_name)
 
