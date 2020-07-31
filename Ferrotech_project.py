@@ -54,7 +54,7 @@ def Area_calculator(df):
 
     df["Alternate_Width"] = df["WIDTH"]
     df.loc[df.Alternate_Width > max_width, "Alternate_Width"] = max_width
-    df["Area"] = df["ORIGINAL_SPAN"]*df["Alternate_Width"]
+    df["Area"] = df["SPAN"]*df["Alternate_Width"]
 
     df = df.drop("Alternate_Width", axis = 1)
     return df
@@ -313,13 +313,11 @@ if __name__ == "__main__":
                 new_df["SHEET_NO"] = int(sheet_no) 
                 if sum(new_df.SPAN) > 5600:
                     new_df["PANEL_SIZE"] = "{}X{}".format(6000, max(new_df.New_Widths))
-                else:
-                    new_df["PANEL_SIZE"] = "{}X{}".format(roundup_100(sum(new_df.SPAN)), max(new_df.New_Widths))
-
-                if sum(new_df.SPAN) > 3000:
                     total_area_created+= 6000*max(new_df.New_Widths)
                 else:
+                    new_df["PANEL_SIZE"] = "{}X{}".format(roundup_100(sum(new_df.SPAN)), max(new_df.New_Widths))
                     total_area_created+= roundup_100(sum(new_df.SPAN))*max(new_df.New_Widths)
+
 
                 new_df = quantity_adder(new_df)
                 
@@ -342,13 +340,11 @@ if __name__ == "__main__":
                 new_df["SHEET_NO"]=int(sheet_no)
                 if sum(new_df.SPAN) > 5600:
                     new_df["PANEL_SIZE"] = "{}X{}".format(6000, max(new_df.New_Widths))
-                else:
-                    new_df["PANEL_SIZE"] = "{}X{}".format(roundup_100(sum(new_df.SPAN)), max(new_df.New_Widths))
-
-                if sum(new_df.SPAN) > 3000:
                     total_area_created+= 6000*max(new_df.New_Widths)
                 else:
+                    new_df["PANEL_SIZE"] = "{}X{}".format(roundup_100(sum(new_df.SPAN)), max(new_df.New_Widths))
                     total_area_created+= roundup_100(sum(new_df.SPAN))*max(new_df.New_Widths)
+               
 
                 new_df = quantity_adder(new_df)
                 new_df = new_df.append(pd.Series(), ignore_index=True)
@@ -364,15 +360,12 @@ if __name__ == "__main__":
             new_df["SHEET_NO"]=int(sheet_no)
             if sum(new_df.SPAN) > 5600:
                     new_df["PANEL_SIZE"] = "{}X{}".format(6000, max(new_df.New_Widths))
+                    total_area_created+= 6000*max(new_df.New_Widths)
                     
             else:
                     new_df["PANEL_SIZE"] = "{}X{}".format(roundup_100(sum(new_df.SPAN)), max(new_df.New_Widths))
-
-            if sum(new_df.SPAN) > 3000:
-                    total_area_created+= 6000*max(new_df.New_Widths)
-            else:
                     total_area_created+= roundup_100(sum(new_df.SPAN))*max(new_df.New_Widths)
-            
+
 
             new_df = quantity_adder(new_df)
             new_df = new_df.append(pd.Series(), ignore_index=True)
